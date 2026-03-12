@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 
-Route::get(config('locale-switcher.route_prefix', '/language') . '/{locale}', function (string $locale) {
+Route::middleware('web')->get(config('locale-switcher.route_prefix', '/language') . '/{locale}', function (string $locale) {
     /** @var array<string, string> $locales */
     $locales = config('locale-switcher.locales', []);
 
