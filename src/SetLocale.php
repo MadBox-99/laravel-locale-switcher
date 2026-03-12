@@ -16,12 +16,12 @@ final class SetLocale
         /** @var string $cookieName */
         $cookieName = config('locale-switcher.cookie_name', 'locale');
 
-        /** @var array<string> $locales */
+        /** @var array<string, string> $locales */
         $locales = config('locale-switcher.locales', []);
 
         $locale = $request->cookie($cookieName);
 
-        if (is_string($locale) && in_array($locale, $locales, true)) {
+        if (is_string($locale) && array_key_exists($locale, $locales)) {
             App::setLocale($locale);
         }
 

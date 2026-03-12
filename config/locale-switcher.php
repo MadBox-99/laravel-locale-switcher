@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 return [
     /*
-     * The supported locales. Only these values will be accepted.
+     * The supported locales as locale => label pairs.
+     * Only these locale codes will be accepted.
      */
-    'locales' => ['en', 'hu'],
+    'locales' => [
+        'en' => 'English',
+        'hu' => 'Magyar',
+    ],
 
     /*
      * The name of the cookie used to store the selected locale.

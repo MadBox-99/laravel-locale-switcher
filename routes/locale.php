@@ -5,10 +5,10 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 
 Route::get(config('locale-switcher.route_prefix', '/language') . '/{locale}', function (string $locale) {
-    /** @var array<string> $locales */
+    /** @var array<string, string> $locales */
     $locales = config('locale-switcher.locales', []);
 
-    if (! in_array($locale, $locales, true)) {
+    if (! array_key_exists($locale, $locales)) {
         abort(400);
     }
 
