@@ -4,27 +4,12 @@ declare(strict_types=1);
 
 namespace MadBox\LocaleSwitcher;
 
-use Closure;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
-use Symfony\Component\HttpFoundation\Response;
+use MadBox\LocaleSwitcher\Middleware\SetLocale as MiddlewareSetLocale;
 
-final class SetLocale
+/**
+ * @deprecated since 1.1.0, use MadBox\LocaleSwitcher\Middleware\SetLocale instead.
+ *             Kept for backward compatibility with v1.0.x consumers.
+ */
+final class SetLocale extends MiddlewareSetLocale
 {
-    public function handle(Request $request, Closure $next): Response
-    {
-        /** @var string $cookieName */
-        $cookieName = config('locale-switcher.cookie_name', 'locale');
-
-        /** @var array<string, string> $locales */
-        $locales = config('locale-switcher.locales', []);
-
-        $locale = $request->cookie($cookieName);
-
-        if (is_string($locale) && array_key_exists($locale, $locales)) {
-            App::setLocale($locale);
-        }
-
-        return $next($request);
-    }
 }

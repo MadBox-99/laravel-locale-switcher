@@ -8,9 +8,24 @@ return [
      * Only these locale codes will be accepted.
      */
     'locales' => [
-        'en' => 'English',
         'hu' => 'Magyar',
+        'en' => 'English',
+        'de' => 'Deutsch',
     ],
+
+    /*
+     * The default locale. In url_prefix mode this locale is served at the
+     * un-prefixed root and is omitted from generated URLs.
+     */
+    'default_locale' => 'hu',
+
+    /*
+     * Locale resolution strategy.
+     *
+     * - 'cookie'     : locale is stored in a cookie (default, backward compatible).
+     * - 'url_prefix' : locale is taken from the URL path prefix (e.g. /en/foo).
+     */
+    'mode' => env('LOCALE_SWITCHER_MODE', 'cookie'),
 
     /*
      * The name of the cookie used to store the selected locale.

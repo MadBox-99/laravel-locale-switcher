@@ -12,6 +12,43 @@ Route::middleware('web')->get(config('locale-switcher.route_prefix', '/language'
         abort(400);
     }
 
+    /** @var string $mode */
+    $mode = config('locale-switcher.mode', 'cookie');
+
+    $previous = url()->previous('/');
+    $isSameHost = parse_url($previous, PHP_URL_HOST) === parse_url(config('app.url'), PHP_URL_HOST);
+
+    if ($mode === 'url_prefix') {
+        /** @var string $defaultLocale */
+        $defaultLocale = config('locale-switcher.default_locale', 'en');
+
+        $appUrl = rtrim((string) config('app.url'), '/');
+
+        $previousPath = '/';
+
+        if ($isSameHost) {
+            $parsedPath = parse_url($previous, PHP_URL_PATH);
+            $previousPath = is_string($parsedPath) && $parsedPath !== '' ? $parsedPath : '/';
+
+            // Strip any existing locale prefix from previous path so we can re-prefix cleanly.
+            $localeKeys = array_keys($locales);
+
+            if ($localeKeys !== [] && preg_match('#^/('.implode('|', $localeKeys).')(/.*)?$#', $previousPath, $matches)) {
+                $previousPath = $matches[2] ?? '/';
+
+                if ($previousPath === '') {
+                    $previousPath = '/';
+                }
+            }
+        }
+
+        $redirectUrl = $locale === $defaultLocale
+            ? $appUrl . $previousPath
+            : $appUrl . '/' . $locale . $previousPath;
+
+        return redirect($redirectUrl);
+    }
+
     /** @var string $cookieName */
     $cookieName = config('locale-switcher.cookie_name', 'locale');
 
@@ -20,8 +57,6 @@ Route::middleware('web')->get(config('locale-switcher.route_prefix', '/language'
 
     $cookie = cookie($cookieName, $locale, $cookieLifetime);
 
-    $previous = url()->previous('/');
-    $isSameHost = parse_url($previous, PHP_URL_HOST) === parse_url(config('app.url'), PHP_URL_HOST);
     $redirectUrl = $isSameHost ? $previous : '/';
 
     return redirect($redirectUrl)->withCookie($cookie);
