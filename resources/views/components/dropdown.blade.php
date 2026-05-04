@@ -1,31 +1,9 @@
-{{--
-    Locale switcher dropdown component.
-    Requires Tailwind CSS and Alpine.js in the consuming application.
-    Honors locale-switcher.mode: in url_prefix mode links use locale-prefixed URLs;
-    in cookie mode they hit the configured switch route.
---}}
+{{-- Requires Tailwind CSS and Alpine.js in the consuming application. --}}
 @php
-    $currentLocale = app()->getLocale();
-    /** @var array<string, string> $locales */
-    $locales = config('locale-switcher.locales', []);
-    /** @var string $defaultLocale */
-    $defaultLocale = config('locale-switcher.default_locale', 'en');
-    /** @var string $mode */
-    $mode = config('locale-switcher.mode', 'cookie');
-    /** @var string $routeName */
-    $routeName = config('locale-switcher.route_name', 'language.switch');
-    $appUrl = rtrim((string) config('app.url'), '/');
-    $currentPath = request()->getPathInfo();
+    use MadBox\LocaleSwitcher\LocaleSwitcher;
 
-    // Strip an existing non-default locale prefix from the current path so we
-    // can build clean alternate URLs.
-    $nonDefaultLocales = array_diff(array_keys($locales), [$defaultLocale]);
-    if ($nonDefaultLocales && preg_match('#^/('.implode('|', $nonDefaultLocales).')(/.*)?$#', $currentPath, $m)) {
-        $currentPath = $m[2] ?? '/';
-        if ($currentPath === '') {
-            $currentPath = '/';
-        }
-    }
+    $currentLocale = LocaleSwitcher::current();
+    $locales = LocaleSwitcher::available();
 @endphp
 
 <div class="relative" x-data="{ open: false }" @click.away="open = false">
@@ -49,16 +27,7 @@
         x-cloak
         class="absolute right-0 top-full mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50">
         @foreach ($locales as $code => $label)
-            @php
-                if ($mode === 'url_prefix') {
-                    $url = $code === $defaultLocale
-                        ? $appUrl . $currentPath
-                        : $appUrl . '/' . $code . $currentPath;
-                } else {
-                    $url = route($routeName, ['locale' => $code]);
-                }
-            @endphp
-            <a href="{{ $url }}"
+            <a href="{{ LocaleSwitcher::urlFor($code) }}"
                 @click="open = false"
                 class="flex items-center gap-2.5 px-4 py-2 text-sm transition-colors {{ $code === $currentLocale ? 'text-primary-600 bg-primary-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                 <span class="w-5 text-center text-xs font-semibold uppercase {{ $code === $currentLocale ? 'text-primary-500' : 'text-gray-400' }}">{{ $code }}</span>

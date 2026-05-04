@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\URL;
+use MadBox\LocaleSwitcher\LocaleSwitcher;
 use ReflectionProperty;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -15,53 +16,46 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
-        /** @var array<string, string> $locales */
-        $locales = config('locale-switcher.locales', []);
+        $locales = LocaleSwitcher::available();
+        $cookieName = (string) config('locale-switcher.cookie_name', 'locale');
 
-        /** @var string $cookieName */
-        $cookieName = config('locale-switcher.cookie_name', 'locale');
+        if (LocaleSwitcher::mode() !== LocaleSwitcher::MODE_URL_PREFIX) {
+            $cookie = $request->cookie($cookieName);
 
-        /** @var string $mode */
-        $mode = config('locale-switcher.mode', 'cookie');
-
-        if ($mode === 'url_prefix') {
-            /** @var string $defaultLocale */
-            $defaultLocale = config('locale-switcher.default_locale', 'en');
-
-            $locale = $request->attributes->get('_locale');
-
-            if (! $locale) {
-                $cookie = $request->cookie($cookieName);
-
-                if (is_string($cookie) && array_key_exists($cookie, $locales)) {
-                    $locale = $cookie;
-                }
-            }
-
-            if (! is_string($locale) || ! array_key_exists($locale, $locales)) {
-                $locale = $defaultLocale;
-            }
-
-            App::setLocale($locale);
-
-            if ($locale !== $defaultLocale) {
-                $appUrl = rtrim((string) config('app.url'), '/');
-
-                $urlGenerator = app('url');
-                $assetProp = new ReflectionProperty($urlGenerator, 'assetRoot');
-                $assetProp->setValue($urlGenerator, $appUrl);
-
-                URL::forceRootUrl($appUrl.'/'.$locale);
+            if (is_string($cookie) && array_key_exists($cookie, $locales)) {
+                App::setLocale($cookie);
             }
 
             return $next($request);
         }
 
-        // Cookie mode (default, backward compatible).
-        $locale = $request->cookie($cookieName);
+        $defaultLocale = LocaleSwitcher::default();
 
-        if (is_string($locale) && array_key_exists($locale, $locales)) {
-            App::setLocale($locale);
+        $locale = $request->attributes->get(LocaleSwitcher::REQUEST_ATTRIBUTE);
+
+        if (! $locale) {
+            $cookie = $request->cookie($cookieName);
+
+            if (is_string($cookie) && array_key_exists($cookie, $locales)) {
+                $locale = $cookie;
+            }
+        }
+
+        if (! is_string($locale) || ! array_key_exists($locale, $locales)) {
+            $locale = $defaultLocale;
+        }
+
+        App::setLocale($locale);
+
+        if ($locale !== $defaultLocale) {
+            $appUrl = LocaleSwitcher::appUrl();
+
+            // Preserve the unprefixed asset root so Vite/asset() URLs do not
+            // get the locale prefix when forceRootUrl rewrites the route root.
+            $urlGenerator = app('url');
+            (new ReflectionProperty($urlGenerator, 'assetRoot'))->setValue($urlGenerator, $appUrl);
+
+            URL::forceRootUrl($appUrl.'/'.$locale);
         }
 
         return $next($request);
